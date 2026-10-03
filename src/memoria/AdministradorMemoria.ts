@@ -15,6 +15,9 @@ export interface AdministradorMemoria {
   /** @returns true si se asigno; false si no hay un hueco contiguo suficiente. */
   asignar(pid: number, tamanio: number): boolean;
 
+  /** Libera el bloque del proceso y fusiona los huecos vecinos (coalescencia). */
+  liberar(pid: number): void;
+
   tieneAsignado(pid: number): boolean;
 
   /** Copia de solo lectura del mapa de memoria, ordenado por direccion. */

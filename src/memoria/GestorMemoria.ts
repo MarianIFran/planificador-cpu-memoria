@@ -67,12 +67,43 @@ export class GestorMemoria implements AdministradorMemoria {
     return true;
   }
 
+  liberar(pid: number): void {
+    const indice = this.#bloques.findIndex((bloque) => bloque.pid === pid);
+    if (indice === -1) {
+      throw new ErrorSimulacion(`El proceso ${pid} no tiene memoria asignada`);
+    }
+    const liberado = this.#bloques[indice];
+    this.#bloques[indice] = new BloqueMemoria(liberado.inicio, liberado.tamanio);
+    this.#coalescer(indice);
+  }
+
   tieneAsignado(pid: number): boolean {
     return this.#bloques.some((bloque) => bloque.pid === pid);
   }
 
   mapa(): readonly BloqueLectura[] {
     return Object.freeze(this.#bloques.map((bloque) => bloque.instantanea()));
+  }
+
+  /**
+   * Fusiona el bloque libre de la posicion indicada con sus vecinos libres.
+   * Primero el derecho y despues el izquierdo, para no perder el indice.
+   * No mueve bloques ocupados: no es compactacion.
+   */
+  #coalescer(indice: number): void {
+    this.#fusionarConSiguiente(indice);
+    this.#fusionarConSiguiente(indice - 1);
+  }
+
+  /** Si el bloque en `indice` y el que le sigue estan libres, los une en uno solo. */
+  #fusionarConSiguiente(indice: number): void {
+    const actual = this.#bloques[indice];
+    const siguiente = this.#bloques[indice + 1];
+    if (actual === undefined || siguiente === undefined || !actual.libre || !siguiente.libre) {
+      return;
+    }
+    const unido = new BloqueMemoria(actual.inicio, actual.tamanio + siguiente.tamanio);
+    this.#bloques.splice(indice, 2, unido);
   }
 
   #bloquesLibres(): BloqueMemoria[] {
