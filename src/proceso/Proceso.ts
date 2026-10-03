@@ -1,5 +1,6 @@
 import { ErrorSimulacion, exigirEnteroPositivo } from '../errores';
 import { EstadoProceso } from './EstadoProceso';
+import type { EventoES } from './EventoES';
 import type { ProcesoLectura } from './ProcesoLectura';
 
 /**
@@ -14,6 +15,7 @@ export class Proceso implements ProcesoLectura {
   #estado: EstadoProceso = EstadoProceso.Nuevo;
   #quantumConsumido = 0;
   #bloqueoRestante = 0;
+  #eventoES: EventoES | null = null;
 
   constructor(pid: number, memoriaRequerida: number, cpuTotal: number) {
     exigirEnteroPositivo(pid, 'El PID');
@@ -55,6 +57,50 @@ export class Proceso implements ProcesoLectura {
 
   get bloqueoRestante(): number {
     return this.#bloqueoRestante;
+  }
+
+  get eventoES(): EventoES | null {
+    return this.#eventoES;
+  }
+
+  /**
+   * Asocia un evento de E/S al proceso (RF08). Reglas de validacion:
+   * - un proceso admite un solo evento;
+   * - el proceso no puede estar Terminado;
+   * - el disparo no puede superar la CPU total (nunca ocurriria);
+   * - el disparo debe ser posterior a la CPU ya consumida.
+   */
+  programarES(evento: EventoES): void {
+    if (this.#eventoES !== null) {
+      throw new ErrorSimulacion(`El proceso ${this.#pid} ya tiene un evento de E/S`);
+    }
+    if (this.#estado === EstadoProceso.Terminado) {
+      throw new ErrorSimulacion(`El proceso ${this.#pid} ya termino`);
+    }
+    if (evento.trasCpu > this.#cpuTotal) {
+      throw new ErrorSimulacion(
+        `El evento de E/S se dispara tras ${evento.trasCpu} ticks, pero el proceso ${this.#pid} solo usa ${this.#cpuTotal}`,
+      );
+    }
+    if (evento.trasCpu <= this.cpuConsumida) {
+      throw new ErrorSimulacion(
+        `El proceso ${this.#pid} ya consumio ${this.cpuConsumida} ticks: el evento de E/S quedo en el pasado`,
+      );
+    }
+    this.#eventoES = evento;
+  }
+
+  /**
+   * Indica si justo ahora corresponde bloquearse por E/S:
+   * esta en CPU, alcanzo el disparo del evento y todavia no termino.
+   */
+  debeBloquearse(): boolean {
+    return (
+      this.#estado === EstadoProceso.Ejecutando &&
+      this.#eventoES !== null &&
+      this.cpuConsumida === this.#eventoES.trasCpu &&
+      this.#cpuRestante > 0
+    );
   }
 
   /** Nuevo -> Esperando Memoria: no habia un hueco suficiente. */
