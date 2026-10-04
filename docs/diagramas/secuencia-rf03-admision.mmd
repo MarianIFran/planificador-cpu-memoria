@@ -1,0 +1,36 @@
+sequenceDiagram
+  autonumber
+  title RF03 y RF04 - Admision y asignacion de memoria (fase 1 del tick)
+  participant T as Test
+  participant S as Simulador
+  participant P as proceso: Proceso
+  participant M as memoria: GestorMemoria
+  participant F as politica: PoliticaAsignacion
+  participant R as planificador: PlanificadorRoundRobin
+
+  T->>S: registrarProceso(pid, memoriaRequerida, cpuTotal)
+  S->>P: new Proceso(pid, memoriaRequerida, cpuTotal)
+  Note right of P: estado = Nuevo
+  S-->>T: ProcesoLectura (copia)
+
+  T->>S: avanzarTick()
+  S->>S: admitirProcesos()
+  loop cada proceso Nuevo o Esperando Memoria, en orden de registro
+    S->>M: asignar(pid, memoriaRequerida)
+    M->>M: mapa()
+    M->>F: elegir(bloques, tamanio)
+    F-->>M: indice del bloque o SIN_BLOQUE
+    alt hay un bloque libre suficiente
+      M->>M: divide el bloque (ocupado + sobrante libre)
+      M-->>S: true
+      S->>P: admitir()
+      Note right of P: estado = Listo
+      S->>R: encolar(proceso)
+    else no hay hueco contiguo suficiente
+      M-->>S: false (el mapa no cambia)
+      opt el proceso estaba en Nuevo
+        S->>P: esperarMemoria()
+        Note right of P: estado = Esperando Memoria
+      end
+    end
+  end

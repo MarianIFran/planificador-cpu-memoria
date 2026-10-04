@@ -1,0 +1,42 @@
+sequenceDiagram
+  autonumber
+  title RF08 - Bloqueo por Entrada/Salida y retorno a Listos
+  participant T as Test
+  participant S as Simulador
+  participant P as proceso: Proceso
+  participant E as evento: EventoES
+  participant R as planificador: PlanificadorRoundRobin
+
+  T->>S: programarES(pid, trasCpu, duracion)
+  S->>E: new EventoES(trasCpu, duracion)
+  S->>P: programarES(evento)
+  Note right of P: valida: un solo evento, disparo posible y futuro
+
+  Note over T,R: Tick en el que el proceso alcanza el disparo
+  T->>S: avanzarTick()
+  S->>R: ejecutarTick()
+  R->>P: ejecutarTick()
+  R->>P: debeBloquearse()
+  P-->>R: true (cpuConsumida = trasCpu y no termino)
+  R->>E: duracion
+  R->>P: bloquear(duracion)
+  Note right of P: estado = Bloqueado, conserva su memoria
+  R->>R: libera la CPU, cambiosDeContexto + 1
+  R-->>S: Bloqueo
+  S->>S: agrega el proceso a bloqueados
+
+  Note over T,R: Ticks siguientes (fase 2 de cada tick)
+  loop mientras bloqueoRestante > 0
+    T->>S: avanzarTick()
+    S->>S: actualizarBloqueados()
+    S->>P: avanzarBloqueo()
+    alt el temporizador llego a 0
+      Note right of P: estado = Listo
+      P-->>S: true
+      S->>S: lo saca de bloqueados
+      S->>R: encolar(proceso)
+      Note over S,R: puede ser despachado en este mismo tick
+    else todavia bloqueado
+      P-->>S: false
+    end
+  end

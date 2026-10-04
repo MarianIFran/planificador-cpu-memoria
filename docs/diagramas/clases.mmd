@@ -1,0 +1,259 @@
+classDiagram
+  direction TB
+
+  class Simulador {
+    -memoria: AdministradorMemoria
+    -planificador: PlanificadorCpu
+    -calculador: CalculadorMetricas
+    -procesos: Map~number, Proceso~
+    -bloqueados: Proceso[]
+    -terminados: Proceso[]
+    -tick: number
+    -ticksCpuOcupada: number
+    -metricas: MetricasLectura
+    +constructor(configuracion: ConfiguracionSimulacion)
+    +registrarProceso(pid, memoriaRequerida, cpuTotal) ProcesoLectura
+    +programarES(pid, trasCpu, duracion) void
+    +avanzarTick() void
+    +avanzarTicks(cantidad) void
+    +metricas() MetricasLectura
+    +procesoEnCpu() ProcesoLectura
+    +listos() ProcesoLectura[]
+    +esperandoMemoria() ProcesoLectura[]
+    +bloqueados() ProcesoLectura[]
+    +terminados() ProcesoLectura[]
+    +procesos() ProcesoLectura[]
+    +proceso(pid) ProcesoLectura
+    +mapaMemoria() BloqueLectura[]
+    -admitirProcesos() void
+    -actualizarBloqueados() void
+    -ejecutarCpu() void
+    -calcularMetricas() MetricasLectura
+  }
+
+  class ConfiguracionSimulacion {
+    <<interface>>
+    +memoriaTotal: number
+    +quantum: number
+    +politica: PoliticaAsignacion
+  }
+
+  class ProcesoLectura {
+    <<interface>>
+    +pid: number
+    +memoriaRequerida: number
+    +cpuTotal: number
+    +cpuRestante: number
+    +cpuConsumida: number
+    +estado: EstadoProceso
+    +quantumConsumido: number
+    +bloqueoRestante: number
+  }
+
+  class Proceso {
+    -pid: number
+    -memoriaRequerida: number
+    -cpuTotal: number
+    -cpuRestante: number
+    -estado: EstadoProceso
+    -quantumConsumido: number
+    -bloqueoRestante: number
+    -eventoES: EventoES
+    +constructor(pid, memoriaRequerida, cpuTotal)
+    +programarES(evento: EventoES) void
+    +debeBloquearse() boolean
+    +esperarMemoria() void
+    +admitir() void
+    +despachar() void
+    +ejecutarTick() void
+    +renovarQuantum() void
+    +expulsar() void
+    +bloquear(duracion) void
+    +avanzarBloqueo() boolean
+    +terminar() void
+    +instantanea() ProcesoLectura
+    -exigirEstado(accion, permitidos) void
+  }
+
+  class EstadoProceso {
+    <<enumeration>>
+    Nuevo
+    EsperandoMemoria
+    Listo
+    Ejecutando
+    Bloqueado
+    Terminado
+  }
+
+  class EventoES {
+    -trasCpu: number
+    -duracion: number
+    +constructor(trasCpu, duracion)
+    +trasCpu: number
+    +duracion: number
+  }
+
+  class AdministradorMemoria {
+    <<interface>>
+    +memoriaTotal: number
+    +memoriaLibre: number
+    +memoriaOcupada: number
+    +mayorBloqueLibre: number
+    +nombrePolitica: string
+    +asignar(pid, tamanio) boolean
+    +liberar(pid) void
+    +tieneAsignado(pid) boolean
+    +mapa() BloqueLectura[]
+  }
+
+  class GestorMemoria {
+    -memoriaTotal: number
+    -politica: PoliticaAsignacion
+    -bloques: BloqueMemoria[]
+    +constructor(memoriaTotal, politica: PoliticaAsignacion)
+    +asignar(pid, tamanio) boolean
+    +liberar(pid) void
+    +tieneAsignado(pid) boolean
+    +mapa() BloqueLectura[]
+    -coalescer(indice) void
+    -fusionarConSiguiente(indice) void
+    -bloquesLibres() BloqueMemoria[]
+  }
+
+  class BloqueLectura {
+    <<interface>>
+    +inicio: number
+    +tamanio: number
+    +pid: number
+    +libre: boolean
+  }
+
+  class BloqueMemoria {
+    -inicio: number
+    -tamanio: number
+    -pid: number
+    +constructor(inicio, tamanio, pid)
+    +fin: number
+    +instantanea() BloqueLectura
+  }
+
+  class PoliticaAsignacion {
+    <<interface>>
+    +nombre: string
+    +elegir(bloques: BloqueLectura[], tamanio) number
+  }
+  class FirstFit {
+    +nombre: string
+    +elegir(bloques, tamanio) number
+  }
+  class BestFit {
+    +nombre: string
+    +elegir(bloques, tamanio) number
+  }
+  class WorstFit {
+    +nombre: string
+    +elegir(bloques, tamanio) number
+  }
+
+  class PlanificadorCpu {
+    <<interface>>
+    +quantum: number
+    +cambiosDeContexto: number
+    +enEjecucion: ProcesoLectura
+    +listos() ProcesoLectura[]
+    +encolar(proceso: Proceso) void
+    +ejecutarTick() ResultadoTick
+  }
+
+  class PlanificadorRoundRobin {
+    -quantum: number
+    -cola: Proceso[]
+    -enCpu: Proceso
+    -cambiosDeContexto: number
+    +constructor(quantum)
+    +listos() ProcesoLectura[]
+    +encolar(proceso: Proceso) void
+    +ejecutarTick() ResultadoTick
+    -despachar() Proceso
+    -resolver(proceso: Proceso) ResultadoCpu
+  }
+
+  class ResultadoTick {
+    <<interface>>
+    +resultado: ResultadoCpu
+    +proceso: Proceso
+  }
+
+  class ResultadoCpu {
+    <<enumeration>>
+    Ociosa
+    Continua
+    Termino
+    Bloqueo
+    Expulsion
+    RenovoQuantum
+  }
+
+  class CalculadorMetricas {
+    <<interface>>
+    +calcular(datos: DatosMetricas) MetricasLectura
+  }
+  class CalculadorMetricasEstandar {
+    +calcular(datos: DatosMetricas) MetricasLectura
+    -porcentaje(parte, total) number
+  }
+  class DatosMetricas {
+    <<interface>>
+    +memoriaTotal: number
+    +memoriaLibre: number
+    +mayorBloqueLibre: number
+    +ticksTranscurridos: number
+    +ticksCpuOcupada: number
+    +cambiosDeContexto: number
+  }
+  class MetricasLectura {
+    <<interface>>
+    +ocupacionMemoria: number
+    +utilizacionCpu: number
+    +cambiosDeContexto: number
+    +memoriaLibre: number
+    +mayorBloqueLibre: number
+    +fragmentacionExterna: number
+  }
+
+  class ErrorSimulacion {
+    +constructor(mensaje: string)
+  }
+  class Error
+  Error <|-- ErrorSimulacion
+
+  Simulador ..> ConfiguracionSimulacion : recibe
+  Simulador "1" *-- "1" AdministradorMemoria : memoria
+  Simulador "1" *-- "1" PlanificadorCpu : planificador
+  Simulador "1" *-- "1" CalculadorMetricas : calculador
+  Simulador "1" *-- "0..*" Proceso : procesos
+  Simulador ..> ErrorSimulacion : lanza
+
+  Proceso ..|> ProcesoLectura
+  Proceso --> "1" EstadoProceso : estado
+  Proceso "1" o-- "0..1" EventoES : eventoES
+
+  GestorMemoria ..|> AdministradorMemoria
+  GestorMemoria "1" *-- "1..*" BloqueMemoria : bloques
+  GestorMemoria "1" --> "1" PoliticaAsignacion : politica
+  BloqueMemoria ..|> BloqueLectura
+  FirstFit ..|> PoliticaAsignacion
+  BestFit ..|> PoliticaAsignacion
+  WorstFit ..|> PoliticaAsignacion
+  PoliticaAsignacion ..> BloqueLectura : consulta
+  ConfiguracionSimulacion --> "0..1" PoliticaAsignacion : politica
+
+  PlanificadorRoundRobin ..|> PlanificadorCpu
+  PlanificadorRoundRobin "1" o-- "0..*" Proceso : cola de Listos
+  PlanificadorRoundRobin "1" o-- "0..1" Proceso : enCpu
+  PlanificadorCpu ..> ResultadoTick : devuelve
+  ResultadoTick --> "1" ResultadoCpu : resultado
+
+  CalculadorMetricasEstandar ..|> CalculadorMetricas
+  CalculadorMetricas ..> DatosMetricas : recibe
+  CalculadorMetricas ..> MetricasLectura : devuelve

@@ -1,0 +1,44 @@
+sequenceDiagram
+  autonumber
+  title RF07 - Un tick de Round-Robin (fase 3 del tick)
+  participant S as Simulador
+  participant R as planificador: PlanificadorRoundRobin
+  participant P as proceso: Proceso
+  participant M as memoria: GestorMemoria
+
+  S->>S: ejecutarCpu()
+  S->>R: ejecutarTick()
+  opt la CPU esta libre y hay Listos
+    R->>R: despachar()
+    R->>P: despachar()
+    Note right of P: estado = Ejecutando, quantum consumido = 0
+  end
+
+  alt no hay proceso para ejecutar
+    R-->>S: Ociosa, proceso = null
+  else hay proceso en CPU
+    R->>P: ejecutarTick()
+    Note right of P: cpuRestante - 1, quantumConsumido + 1
+    R->>R: resolver(proceso)
+    alt cpuRestante = 0
+      R->>P: terminar()
+      R-->>S: Termino
+      S->>M: liberar(pid)
+      M->>M: coalescer(indice)
+      S->>S: agrega el proceso a terminados
+    else debeBloquearse() = true
+      R->>P: bloquear(duracion)
+      R-->>S: Bloqueo (detalle en el diagrama de RF08)
+    else quantum sin agotar
+      R-->>S: Continua
+    else quantum agotado y hay otros Listos
+      R->>P: expulsar()
+      R->>R: lo pone al final de la cola, cambiosDeContexto + 1
+      R-->>S: Expulsion
+    else quantum agotado y no hay otros Listos
+      R->>P: renovarQuantum()
+      R-->>S: RenovoQuantum
+    end
+    S->>S: ticksCpuOcupada + 1
+  end
+  S->>S: tick + 1 y calcularMetricas()
