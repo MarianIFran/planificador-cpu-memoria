@@ -89,7 +89,7 @@ src/
   metricas/                  Cálculo de métricas
   simulador/                 Simulador (coordina las fases del tick) y su configuración
 tests/                       Un archivo de tests por cada parte, con la misma organización
-docs/diagramas/              Diagramas UML (imagen PNG y fuente editable Mermaid)
+docs/diagramas/diagramas-              Diagramas UML (imagen PNG y fuente editable Mermaid)
 .github/workflows/tests.yml  Integración continua
 ```
 
@@ -127,10 +127,10 @@ Cada diagrama está en dos versiones: la imagen (`.png`) y la fuente editable (`
 
 | Diagrama | Imagen | Fuente editable |
 |---|---|---|
-| Clases | [clases.png](docs/diagramas/clases.png) | [clases.mmd](docs/diagramas/clases.mmd) |
-| Secuencia RF03/RF04: admisión y asignación de memoria | [png](docs/diagramas/secuencia-rf03-admision.png) | [mmd](docs/diagramas/secuencia-rf03-admision.mmd) |
-| Secuencia RF07: un tick de Round-Robin | [png](docs/diagramas/secuencia-rf07-round-robin.png) | [mmd](docs/diagramas/secuencia-rf07-round-robin.mmd) |
-| Secuencia RF08: bloqueo por E/S y retorno | [png](docs/diagramas/secuencia-rf08-entrada-salida.png) | [mmd](docs/diagramas/secuencia-rf08-entrada-salida.mmd) |
+| Clases | [diagramas-clases.png](docs/diagramas/diagramas-clases.png) | [diagramas-clases.mmd](docs/diagramas/diagramas-clases.mmd) |
+| Secuencia RF03/RF04: admisión y asignación de memoria | [png](docs/diagramas/diagramas-secuencia-rf03-admision.png) | [mmd](docs/diagramas/diagramas-secuencia-rf03-admision.mmd) |
+| Secuencia RF07: un tick de Round-Robin | [png](docs/diagramas/diagramas-secuencia-rf07-round-robin.png) | [mmd](docs/diagramas/diagramas-secuencia-rf07-round-robin.mmd) |
+| Secuencia RF08: bloqueo por E/S y retorno | [png](docs/diagramas/diagramas-secuencia-rf08-entrada-salida.png) | [mmd](docs/diagramas/diagramas-secuencia-rf08-entrada-salida.mmd) |
 
 ## Decisiones de diseño
 
